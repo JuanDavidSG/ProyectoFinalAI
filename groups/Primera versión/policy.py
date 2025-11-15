@@ -17,7 +17,7 @@ class MCTS(Policy):
             self.candidates_actions = state.get_free_cols()
 
     def __init__(self):
-        self.T = 2000
+        self.T = 4000
         self.C = 1.4
 
     def mount(self, T: int=1000, C: float = 1.4):
@@ -44,7 +44,7 @@ class MCTS(Policy):
             node = root
             
             #Selección
-            while(not node.state.is_final() and (len(node.children) == len(node.candidates_actions))): # Hasta que el juego acabe o se prueben todas las opciones
+            while(not node.state.is_final() and node.children != {}): # Hasta que el juego acabe o hayan ramas por explorar
                 node = self.select_ucb(node)
             
             #Expansión
@@ -116,6 +116,7 @@ class MCTS(Policy):
         while node is not None:
             node.N += 1
             node.R += R
+            R = -R # Porque es de juego de suma cero
             node = node.parent
     
     
