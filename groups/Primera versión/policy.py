@@ -3,6 +3,7 @@ import random
 import numpy as np
 from connect4.policy import Policy
 from connect4.connect_state import ConnectState
+import time
        
 class MCTS(Policy):
     
@@ -17,11 +18,9 @@ class MCTS(Policy):
             self.candidates_actions = state.get_free_cols()
 
     def __init__(self):
-        self.T = 4000
         self.C = 1.4
 
     def mount(self, T: int=1000, C: float = 1.4):
-        self.T = T
         self.C = C
 
 
@@ -40,7 +39,10 @@ class MCTS(Policy):
         player = s.player
         root = self.Node(s, None, None)
         
-        for i in range(self.T):
+        time_limit=9.0
+        start_time = time.time
+        
+        while time.time() - start_time < time_limit:
             node = root
             
             #Selección
