@@ -15,12 +15,12 @@ class MCTS(Policy):
             self.children = {}            
             self.N = 0                    
             self.R = 0                
-            self.candidates_actions = state.get_free_cols()
+            self.candidates_actions = list(state.get_free_cols())
 
     def __init__(self):
         self.C = 1.4
         self.T=4000
-        self.time_limit_per_movement= 0.6
+        self.time_limit_per_movement= 7
         self.simulation_depth_limit=42
 
 
@@ -36,31 +36,34 @@ class MCTS(Policy):
 
     def act(self, s: np.ndarray) -> int:
         
-        num_1 = np.sum(s == 1)
+        num_1 = np.sum(s == 1) 
         num_m1 = np.sum(s == -1)
 
         if num_1 == num_m1:
-            player = 1 
+            player = -1 
         else:
-            player = -1
+            player = 1
 
-        s = ConnectState(s.copy(), player)
+        state = ConnectState(s.copy(), player)
+
+        if state.get_winner() is not None:
+            return state.get_free_cols()[0]
+
+        player = state.player
+        root = self.Node(state, None, None)
         
-        player = s.player
-        root = self.Node(s, None, None)
-        
-        time_limit=9.0
+        time_limit=self.time_limit_per_movement
         start_time = time.time()
         
         while time.time() - start_time < time_limit:
             node = root
             
             #Selección
-            while(not node.state.is_final() and node.children != {}): # Hasta que el juego acabe o hayan ramas por explorar
+            while( node.state.get_winner() is None and node.children != {}): # Hasta que el juego acabe o hayan ramas por explorar
                 node = self.select_ucb(node)
             
             #Expansión
-            if (not node.state.is_final() and node.candidates_actions != []):
+            if (node.state.get_winner() is None and node.candidates_actions != []):
                 node = self.expand(node)
             
             #Simulación
@@ -98,21 +101,47 @@ class MCTS(Policy):
       
     def expand(self, node):
         
-        action = node.candidates_actions.pop()
-        new_state = node.state.transition(action)
-        child = self.Node(new_state, node, action)
-        node.children[action] = child
-        
-        return child
-    
+        legal_action= node.candidates_actions.copy()
+        reorder_actions=random.sample(legal_action, k=len(legal_action))
+
+        for action in legal_action:
+            next_state = node.state.transition(action)
+
+            if next_state.get_winner()== node.state.player:
+                node.candidates_actions.remove(action)
+                child = self.Node(next_state, node, action)
+                node.children[action] = child
+            
+                return child
+            
+        other_player= -node.state.player
+
+        for action in legal_action:
+            next_state= ConnectState(node.state.board.copy(),other_player).transition(action)
+
+            if next_state.get_winner()==other_player:
+                
+                no_play_state=node.state.transition(action)
+                node.candidates_actions.remove(action)
+                child=self.Node(no_play_state,node,action)
+
+                node.children[action]=child
+
+                return child
+
+        if node.candidates_actions:
+            action=node.candidates_actions.pop()
+            child= self.Node(next_state,node,action)
+            node.children[action]=child
+
+            return child
     
     def innerTrial(self, state: ConnectState, player:int):
 
         'Primero intenta ganar, si no puede entonces bloquea al oponente. Si no hay riesgo claro juega aleatorio'
 
         depth=0
-        current_player=state.player
-        next_player=-current_player
+
 
         while True:
             
@@ -131,12 +160,15 @@ class MCTS(Policy):
 
             play=False
             legal_actions= state.get_free_cols()
+
+            current_player=state.player
+            next_player=-state.player
             
             
             for action in legal_actions:
                 next_state= state.transition(action)
 
-                if next_state.get_winner()== player:
+                if next_state.get_winner()== current_player:
                     state=next_state
                     play=True
                     break
@@ -145,15 +177,22 @@ class MCTS(Policy):
                 depth=depth+1
                 continue
             
-            for action in legal_actions:
-                next_state=state.transition(action)
-                if next_state.get_winner()== -state.player:
-                    state=next_state
-                    play=True
-                    break
+            #Puede ganar el enemigo
 
-            if play ==True:
-                depth=depth+1
+            for act in legal_actions:
+
+                current_player=state.player
+                
+                my_state= ConnectState(state.board.copy(), -state.player)
+                next_state = my_state.transition(act)
+
+                if next_state.get_winner()==-state.player:
+                    state=state.transition(act)
+                    play=True
+                    depth=depth+1
+                    break
+            
+            if play:
                 continue
 
 
