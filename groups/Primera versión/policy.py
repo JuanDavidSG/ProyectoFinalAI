@@ -19,10 +19,20 @@ class MCTS(Policy):
 
     def __init__(self):
         self.C = 1.4
+        self.T=4000
+        self.time_limit_per_movement= 0.6
+        self.simulation_depth_limit=42
 
-    def mount(self, T: int=1000, C: float = 1.4):
-        self.C = C
 
+    def mount(self, T = None, C=None, time_limit_per_movement=None, simulation_depth_limit=None):
+        if C is not None:
+            self.C = C
+        if T is not None:
+            self.T=T
+        if time_limit_per_movement is not None:
+            self.time_limit_per_movement= time_limit_per_movement
+        if simulation_depth_limit is not None:
+            self.simulation_depth_limit= simulation_depth_limit
 
     def act(self, s: np.ndarray) -> int:
         
@@ -40,7 +50,7 @@ class MCTS(Policy):
         root = self.Node(s, None, None)
         
         time_limit=9.0
-        start_time = time.time
+        start_time = time.time()
         
         while time.time() - start_time < time_limit:
             node = root
@@ -97,21 +107,61 @@ class MCTS(Policy):
     
     
     def innerTrial(self, state: ConnectState, player:int):
-        
-        while not state.is_final():
+
+        'Primero intenta ganar, si no puede entonces bloquea al oponente. Si no hay riesgo claro juega aleatorio'
+
+        depth=0
+        current_player=state.player
+        next_player=-current_player
+
+        while True:
             
-            action = random.choice(state.get_free_cols())
+            winner = state.get_winner()
+
+            if winner is not None:
+                if winner == player:
+                    return 1
+                elif winner == 0:
+                    return 0
+                
+                return -1
+            
+            if depth>=self.simulation_depth_limit:
+                return 0
+
+            play=False
+            legal_actions= state.get_free_cols()
+            
+            
+            for action in legal_actions:
+                next_state= state.transition(action)
+
+                if next_state.get_winner()== player:
+                    state=next_state
+                    play=True
+                    break
+            
+            if play== True:
+                depth=depth+1
+                continue
+            
+            for action in legal_actions:
+                next_state=state.transition(action)
+                if next_state.get_winner()== -state.player:
+                    state=next_state
+                    play=True
+                    break
+
+            if play ==True:
+                depth=depth+1
+                continue
+
+
+            action = random.choice(legal_actions)
             state = state.transition(action)
-            
-        winner = state.get_winner()
         
-        if winner == player:
-            return 1
-        elif winner == 0:
-            return 0
+            depth=depth+1
         
-        return -1
-    
     
     def propagation(self, node, R: float):
         
