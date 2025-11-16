@@ -20,7 +20,7 @@ class MCTS(Policy):
     def __init__(self):
         self.C = 1.4
         self.T=4000
-        self.time_limit_per_movement= 7
+        self.time_limit_per_movement= 10
         self.simulation_depth_limit=42
 
 
@@ -39,8 +39,8 @@ class MCTS(Policy):
         num_1 = np.sum(s == 1) 
         num_m1 = np.sum(s == -1)
 
-        if num_1 == num_m1:
-            player = -1 
+        if num_1 > num_m1:
+            player = -1
         else:
             player = 1
 
@@ -104,7 +104,7 @@ class MCTS(Policy):
         legal_action= node.candidates_actions.copy()
         reorder_actions=random.sample(legal_action, k=len(legal_action))
 
-        for action in legal_action:
+        for action in reorder_actions:
             next_state = node.state.transition(action)
 
             if next_state.get_winner()== node.state.player:
@@ -116,13 +116,13 @@ class MCTS(Policy):
             
         other_player= -node.state.player
 
-        for action in legal_action:
-            next_state= ConnectState(node.state.board.copy(),other_player).transition(action)
+        for action in reorder_actions:
+            next_state_other= ConnectState(node.state.board.copy(),other_player)
+            next_step_other= next_state_other.transition(action)
 
-            if next_state.get_winner()==other_player:
-                
-                no_play_state=node.state.transition(action)
+            if next_step_other.get_winner()==other_player:
                 node.candidates_actions.remove(action)
+                no_play_state=node.state.transition(action)
                 child=self.Node(no_play_state,node,action)
 
                 node.children[action]=child
@@ -131,6 +131,7 @@ class MCTS(Policy):
 
         if node.candidates_actions:
             action=node.candidates_actions.pop()
+            next_state=node.state.transition(action )
             child= self.Node(next_state,node,action)
             node.children[action]=child
 
@@ -160,15 +161,11 @@ class MCTS(Policy):
 
             play=False
             legal_actions= state.get_free_cols()
-
-            current_player=state.player
-            next_player=-state.player
-            
             
             for action in legal_actions:
                 next_state= state.transition(action)
 
-                if next_state.get_winner()== current_player:
+                if next_state.get_winner()== state.player:
                     state=next_state
                     play=True
                     break
@@ -178,27 +175,25 @@ class MCTS(Policy):
                 continue
             
             #Puede ganar el enemigo
+            other=-state.player
 
             for act in legal_actions:
 
-                current_player=state.player
-                
-                my_state= ConnectState(state.board.copy(), -state.player)
-                next_state = my_state.transition(act)
+                other_player_state= ConnectState(state.board.copy(),other)
+                next_other_player_state = other_player_state.transition(act)
 
-                if next_state.get_winner()==-state.player:
+                if next_other_player_state.get_winner()==other:
                     state=state.transition(act)
                     play=True
-                    depth=depth+1
                     break
-            
+                
             if play:
+                depth=depth+1
                 continue
 
 
             action = random.choice(legal_actions)
             state = state.transition(action)
-        
             depth=depth+1
         
     
@@ -212,16 +207,33 @@ class MCTS(Policy):
     
     
     def takeAction(self, node):
-        visits = -1
+
+        best_q_value=-float("inf")
         best_action = None
+
         for action, child in node.children.items():
-            if child.N > visits:
-                visits = child.N
+            if child.N > 0:
+                q= child.R/child.N
+            else:
+                q=0
+
+            if q> best_q_value:
+                best_q_value=q
                 best_action = action
-        if best_action == None:
-            best_action = node.state.get_free_cols()
-            best_action = best_action[0]
         
+        if best_action is None:
+            if node.children:
+                visits = -1
+                
+                for action, child in node.children.items():
+                    if child.N > visits:
+                        visits=child.N
+                        best_action=action
+        
+        if best_action is None:
+            best_action= node.state.get_free_cols()[0]
+        
+
         return best_action
 
     
