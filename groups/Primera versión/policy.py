@@ -40,9 +40,9 @@ class MCTS(Policy):
         num_m1 = np.sum(s == -1)
 
         if num_1 == num_m1:
-            player = -1 
+            player = 1 
         else:
-            player = 1
+            player = -1
 
         s = ConnectState(s.copy(), player)
         
