@@ -21,7 +21,7 @@ class MCTS(Policy):
         self.C = 1.4
         self.T=4000
         self.time_limit_per_movement= 3
-        self.simulation_depth_limit=12
+        self.simulation_depth_limit=1
 
 
     def mount(self, T = None, C=None, time_limit_per_movement=None, simulation_depth_limit=None):
