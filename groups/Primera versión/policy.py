@@ -20,8 +20,8 @@ class MCTS(Policy):
     def __init__(self):
         self.C = 1.4
         self.T=4000
-        self.time_limit_per_movement= 10
-        self.simulation_depth_limit=42
+        self.time_limit_per_movement= 3
+        self.simulation_depth_limit=12
 
 
     def mount(self, T = None, C=None, time_limit_per_movement=None, simulation_depth_limit=None):
@@ -36,20 +36,30 @@ class MCTS(Policy):
 
     def act(self, s: np.ndarray) -> int:
         
-        num_1 = np.sum(s == 1) 
-        num_m1 = np.sum(s == -1)
-
-        if num_1 > num_m1:
-            player = -1
-        else:
-            player = 1
+        player=-1
 
         state = ConnectState(s.copy(), player)
 
-        if state.get_winner() is not None:
-            return state.get_free_cols()[0]
+        if not state.get_free_cols():
+            return 0
 
-        player = state.player
+        for cols in state.get_free_cols():
+            state_copy=ConnectState(state.board.copy(), player)
+            next_step_copy=state_copy.transition(cols)
+
+            if next_step_copy.get_winner()==player:
+                return cols
+            
+        other= -player
+
+        for cols in state.get_free_cols():
+            state_other=ConnectState(state.board.copy(), other)
+            next_step_other=state_other.transition(cols)
+
+            if next_step_other.get_winner()==other:
+                return cols              
+
+        
         root = self.Node(state, None, None)
         
         time_limit=self.time_limit_per_movement
@@ -59,11 +69,11 @@ class MCTS(Policy):
             node = root
             
             #Selección
-            while( node.state.get_winner() is None and node.children != {}): # Hasta que el juego acabe o hayan ramas por explorar
+            while( node.state.get_winner() ==0 and node.children != {}): # Hasta que el juego acabe o hayan ramas por explorar
                 node = self.select_ucb(node)
             
             #Expansión
-            if (node.state.get_winner() is None and node.candidates_actions != []):
+            if (node.state.get_winner() == 0 and node.candidates_actions != []):
                 node = self.expand(node)
             
             #Simulación
@@ -131,8 +141,8 @@ class MCTS(Policy):
 
         if node.candidates_actions:
             action=node.candidates_actions.pop()
-            next_state=node.state.transition(action )
-            child= self.Node(next_state,node,action)
+            next_statee=node.state.transition(action )
+            child= self.Node(next_statee,node,action)
             node.children[action]=child
 
             return child
@@ -148,27 +158,29 @@ class MCTS(Policy):
             
             winner = state.get_winner()
 
-            if winner is not None:
+            if winner !=0:
                 if winner == player:
                     return 1
-                elif winner == 0:
-                    return 0
-                
-                return -1
+                else:
+                    return -1
             
             if depth>=self.simulation_depth_limit:
                 return 0
 
             play=False
-            legal_actions= state.get_free_cols()
-            
-            for action in legal_actions:
-                next_state= state.transition(action)
 
-                if next_state.get_winner()== state.player:
-                    state=next_state
-                    play=True
-                    break
+
+            if not state.get_free_cols():
+                return 0
+            
+            for action in state.get_free_cols():
+                    state_copy=ConnectState(state.board.copy(), player)
+                    next_step_copy=state_copy.transition(action)
+
+                    if next_step_copy.get_winner()== state.player:
+                        state=next_step_copy
+                        play=True
+                        break
             
             if play== True:
                 depth=depth+1
@@ -177,7 +189,7 @@ class MCTS(Policy):
             #Puede ganar el enemigo
             other=-state.player
 
-            for act in legal_actions:
+            for act in state.get_free_cols():
 
                 other_player_state= ConnectState(state.board.copy(),other)
                 next_other_player_state = other_player_state.transition(act)
@@ -192,7 +204,7 @@ class MCTS(Policy):
                 continue
 
 
-            action = random.choice(legal_actions)
+            action = random.choice(state.get_free_cols())
             state = state.transition(action)
             depth=depth+1
         
@@ -211,27 +223,36 @@ class MCTS(Policy):
         best_q_value=-float("inf")
         best_action = None
 
+        if not node.state.get_free_cols():
+            return 0
+
         for action, child in node.children.items():
+            if action not in node.state.get_free_cols():
+                continue
+
             if child.N > 0:
                 q= child.R/child.N
             else:
                 q=0
 
             if q> best_q_value:
-                best_q_value=q
-                best_action = action
+                if action in node.state.get_free_cols():
+                    best_q_value=q
+                    best_action = action
         
         if best_action is None:
             if node.children:
                 visits = -1
                 
                 for action, child in node.children.items():
+                    if action not in node.state.get_free_cols():
+                        continue
                     if child.N > visits:
                         visits=child.N
                         best_action=action
         
         if best_action is None:
-            best_action= node.state.get_free_cols()[0]
+            best_action= random.choice(node.state.get_free_cols())
         
 
         return best_action
