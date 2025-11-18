@@ -18,10 +18,10 @@ class MCTS(Policy):
             self.candidates_actions = list(state.get_free_cols())
 
     def __init__(self):
-        self.C = 1.4
+        self.C = 0.5
         self.T=4000
-        self.time_limit_per_movement= 5
-        self.simulation_depth_limit=30
+        self.time_limit_per_movement= 8
+        self.simulation_depth_limit=42
 
 
     def mount(self, T = None, C=None, time_limit_per_movement=None, simulation_depth_limit=None):
@@ -36,7 +36,22 @@ class MCTS(Policy):
 
     def act(self, s: np.ndarray) -> int:
         
-        player=-1
+        player1_count=0
+        player2_count=0
+
+        for col in s:
+            for count in col:
+                if count ==1:
+                    player1_count=player1_count+1
+                
+                elif count==-1:
+                    player2_count=player2_count+1
+
+            
+        if player1_count == player2_count:
+            player=1
+        else:
+            player=-1
 
         state = ConnectState(s.copy(), player)
 
@@ -54,10 +69,9 @@ class MCTS(Policy):
         other= -player
 
         for cols in state.get_free_cols():
-            state_other=ConnectState(state.board.copy(), other)
-            next_step_other=state_other.transition(cols)
+            state_other=ConnectState(state.board.copy(), other).transition(cols)
 
-            if next_step_other.get_winner()==other:
+            if state_other.get_winner()==other:
                 return cols    
 
 
@@ -144,14 +158,15 @@ class MCTS(Policy):
         other_player= -node.state.player
 
         for action in reorder_actions:
-            next_state_other= ConnectState(node.state.board.copy(),other_player)
-            next_step_other= next_state_other.transition(action)
+            next_state_other= ConnectState(node.state.board.copy(),other_player).transition(action)
 
-            if next_step_other.get_winner()==other_player:
+            if next_state_other.get_winner()==other_player:
+
                 node.candidates_actions.remove(action)
                 no_play_state=node.state.transition(action)
                 child=self.Node(no_play_state,node,action)
                 child.candidates_actions=no_play_state.get_free_cols()
+                node.children[action] =child
 
                 return child
 
@@ -270,19 +285,23 @@ class MCTS(Policy):
         other_player=-player
         future_problems=[]
 
-        if not state.get_free_cols():
-            return future_problems
 
         for col in state.get_free_cols():
-            new_state= ConnectState(state.board.copy(), player)
-            new_state.transition(col)
+
+            new_state= ConnectState(state.board.copy(), player).transition(col)
+
+            problems_count=0
 
             for one in new_state.get_free_cols():
-                other_state=ConnectState(new_state.board.copy(), other_player)
-                other_state.transition(one)
+                other_state=ConnectState(new_state.board.copy(), other_player).transition(one)
 
                 if other_state.get_winner() == other_player:
+
+                    problems_count= problems_count+1
+                
+                if problems_count >=2:
                     future_problems.append(col)
                     break
+
         return future_problems
 
