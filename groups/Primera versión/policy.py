@@ -18,21 +18,13 @@ class MCTS(Policy):
             self.candidates_actions = list(state.get_free_cols())
 
     def __init__(self):
-        self.C = 0.5
-        self.T=4000
-        self.time_limit_per_movement= 8
-        self.simulation_depth_limit=42
+        self.T = 42
+        self.C = 1.4
 
+    def mount(self, T: int=42, C: float = 1.4):
+        self.T = T
+        self.C = C
 
-    def mount(self, T = None, C=None, time_limit_per_movement=None, simulation_depth_limit=None):
-        if C is not None:
-            self.C = C
-        if T is not None:
-            self.T=T
-        if time_limit_per_movement is not None:
-            self.time_limit_per_movement= time_limit_per_movement
-        if simulation_depth_limit is not None:
-            self.simulation_depth_limit= simulation_depth_limit
 
     def act(self, s: np.ndarray) -> int:
         
@@ -93,10 +85,8 @@ class MCTS(Policy):
         root = self.Node(state, None, None)
         root.candidates_actions= allowed_movements.copy()
         
-        time_limit=self.time_limit_per_movement
-        start_time = time.time()
-        
-        while time.time() - start_time < time_limit:
+        for i in range(self.T):
+
             node = root
             
             #Selección
@@ -182,9 +172,6 @@ class MCTS(Policy):
 
         'Primero intenta ganar, si no puede entonces bloquea al oponente. Si no hay riesgo claro juega aleatorio'
 
-        depth=0
-
-
         while True:
             
             winner = state.get_winner()
@@ -195,8 +182,6 @@ class MCTS(Policy):
                 else:
                     return -1
             
-            if depth>=self.simulation_depth_limit:
-                return 0
 
             play=None
 
@@ -229,7 +214,6 @@ class MCTS(Policy):
             
             
             state = state.transition(play)
-            depth=depth+1
         
     
     def propagation(self, node, R: float):
@@ -268,6 +252,7 @@ class MCTS(Policy):
                 visits = -1
                 
                 for action, child in node.children.items():
+
                     if action not in node.state.get_free_cols():
                         continue
                     if child.N > visits:
