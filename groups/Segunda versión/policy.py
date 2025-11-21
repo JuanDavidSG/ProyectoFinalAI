@@ -119,6 +119,18 @@ class MCTS(Policy):
             
             #Backpropagation
             self.propagation(node, R)
+
+            if i > 10:
+                mejor_q = -1
+                
+                for action, child in root.children.items():
+                    if child.N > 0:
+                        q = child.R / child.N
+                        if q > mejor_q:
+                            mejor_q = q
+                
+                if mejor_q > 0.8:
+                    break
         
         return self.takeAction(root)
             
