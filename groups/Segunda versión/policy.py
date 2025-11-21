@@ -25,6 +25,23 @@ class MCTS(Policy):
         self.T = T
         self.C = C
 
+    def dynamiC(self, state):
+        total_pieces = 0
+
+        for col in state.board:
+            for cell in col:
+                if cell != 0:
+                    total_pieces += 1
+
+        progress = total_pieces / 42.0
+
+        if progress < 0.3: 
+            return self.C * 1.3  
+        elif progress < 0.7:  
+            return self.C  
+        else:  
+            return self.C * 0.7  
+
 
     def act(self, s: np.ndarray) -> int:
         
@@ -111,6 +128,8 @@ class MCTS(Policy):
         
         succ = None     # El succesor escogido, no la lista
         current_ucb = -float("inf")
+
+        dynamic_C = self.dynamiC(node.state)
         
         for action, child in node.children.items():
             
@@ -119,7 +138,7 @@ class MCTS(Policy):
             else:
                 Q = 0
             
-            exploration_factor =  self.C * math.sqrt( math.log(node.N + 1) / (child.N + 1))  
+            exploration_factor =  dynamic_C * math.sqrt( math.log(node.N + 1) / (child.N + 1))  
             
             new_ucb = Q + exploration_factor  
             
