@@ -122,13 +122,13 @@ class MCTS(Policy):
 
             if i > 10:
                 mejor_q = -1
-                
+
                 for action, child in root.children.items():
                     if child.N > 0:
                         q = child.R / child.N
                         if q > mejor_q:
                             mejor_q = q
-                
+
                 if mejor_q > 0.8:
                     break
         
@@ -260,6 +260,7 @@ class MCTS(Policy):
 
         best_q_value=-float("inf")
         best_action = None
+        eps = 1e-6
 
         if not node.state.get_free_cols():
             return 0
@@ -273,22 +274,12 @@ class MCTS(Policy):
             else:
                 q=0
 
-            if q> best_q_value:
-                if action in node.state.get_free_cols():
-                    best_q_value=q
-                    best_action = action
-        
-        if best_action is None:
-            if node.children:
-                visits = -1
-                
-                for action, child in node.children.items():
+            q_ajus = max(q, 0.0)
+            score = (q_ajus + eps) * (child.N + 1)
 
-                    if action not in node.state.get_free_cols():
-                        continue
-                    if child.N > visits:
-                        visits=child.N
-                        best_action=action
+            if score > best_q_value:
+                best_q_value = score
+                best_action = action
         
         if best_action is None:
             best_action= random.choice(node.state.get_free_cols())
