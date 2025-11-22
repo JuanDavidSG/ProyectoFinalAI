@@ -40,7 +40,7 @@ class MCTS(Policy):
         elif progress < 0.7:  
             return self.C  
         else:  
-            return self.C * 0.7  
+            return self.C * 0.8  
 
 
     def act(self, s: np.ndarray) -> int:
@@ -129,7 +129,7 @@ class MCTS(Policy):
                         if q > mejor_q:
                             mejor_q = q
 
-                if mejor_q > 0.8:
+                if mejor_q > 0.9:
                     break
         
         return self.takeAction(root)
