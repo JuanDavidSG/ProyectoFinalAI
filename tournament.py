@@ -93,9 +93,19 @@ def play(
             state = state.transition(int(action))
 
         games.append(game_history)
-
+         
         # Determine winner
         winner = state.get_winner()
+        
+        print("")
+        print(f"PRIMER JUGADOR: {first_participant}")
+        print("")
+        print(f"Segundo JUGADOR: {second_participant}")
+        print("")
+        print("")
+        print(f"GANADOR: {winner}")
+        print(state.board)
+        
         if winner == -1:
             if first_participant == a:
                 a_wins += 1
@@ -110,8 +120,8 @@ def play(
             draws += 1
 
         # Early stopping in case of too many draws
-        if draws >= games_to_win + 5:
-            break
+        #if draws >= games_to_win + 5:
+         #   break
 
     # Save match result
     match = Match(
@@ -137,7 +147,7 @@ def play(
 def run_tournament(
     players: list[Participant],
     play: Callable[[Participant, Participant], Participant],
-    best_of: int = 7,
+    best_of: int = 15,
     first_player_distribution: float = 0.5,
     shuffle: bool = True,
     seed: int = 911,
