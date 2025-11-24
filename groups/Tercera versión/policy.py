@@ -3,6 +3,7 @@ import random
 import numpy as np
 from connect4.policy import Policy
 from connect4.connect_state import ConnectState
+import time
 
 class MCTS(Policy):
     
@@ -17,15 +18,17 @@ class MCTS(Policy):
             self.candidates_actions = list(state.get_free_cols())
 
     def __init__(self):
-        self.T = 42
+        self.T = 35
         self.C = 1.4
 
-    def mount(self, T: int=42, C: float = 1.4):
+    def mount(self, T: int=35, C: float = 1.4):
         self.T = T
         self.C = C
 
 
     def act(self, s: np.ndarray) -> int:
+        start_time = time.time()  
+        nodes_expanded = 0
         
         player1_count=0
         player2_count=0
@@ -75,8 +78,8 @@ class MCTS(Policy):
         actions_score = []
         for col in free_cols:
             score = 0.0
-            score += self.center_score(col)
-            score += self.player_strategy(state, col, player)
+            score +=  self.center_score(col)
+            score +=  self.player_strategy(state, col, player)
             
             # contar mis amenazas
             my_threats = 0
@@ -84,24 +87,20 @@ class MCTS(Policy):
             for next_col in next_state.get_free_cols():
                 if next_state.transition(next_col).get_winner() == player:
                     my_threats += 1
-            score += my_threats
+            score += 2*my_threats
             
             # contar amenazas del oponente  
             opp_threats = 0
             for next_col in next_state.get_free_cols():
                 if next_state.transition(next_col).get_winner() == -player:
                     opp_threats += 1
-            score -= opp_threats
-            
-            if col in problems:
-                score -= 2
-                
+            score -= 2*opp_threats
             
             
             actions_score.append((score, col))
         
         actions_score.sort(reverse=True)
-
+        
         if len(actions_score) >= 5:
             x = 5
         else:
@@ -121,10 +120,12 @@ class MCTS(Policy):
         if not allowed_movements:
             allowed_movements = free_cols.copy()
         else:
-            # O todas son iguales
             random.shuffle(allowed_movements)
         
-        root = self.Node(state, None, None)
+        
+        
+        self.root = self.Node(state, None, None)
+        root = self.root
         root.candidates_actions= allowed_movements.copy()
         
         for i in range(self.T):
@@ -138,12 +139,20 @@ class MCTS(Policy):
             #Expansión
             if (node.state.get_winner() == 0 and node.candidates_actions != []):
                 node = self.expand(node)
+                nodes_expanded += 1
             
             #Simulación
             R = self.innerTrial(node.state, player)
             
             #Backpropagation
             self.propagation(node, R)
+            
+            elapsed_time = time.time() - start_time
+            
+            self.last_metrics = {
+                "nodes_expanded": nodes_expanded,
+                "time_elapsed": elapsed_time
+            }
         
         return self.takeAction(root)
             
@@ -376,3 +385,4 @@ class MCTS(Policy):
             return 1
         
         return 0
+

@@ -84,27 +84,15 @@ def play(
         second_policy.mount()
 
         state = ConnectState()
-        game_history: Game = Game()
 
         while not state.is_final():
             current_policy = first_policy if state.player == -1 else second_policy
             action = current_policy.act(state.board)
-            game_history.append((state.board.copy().tolist(), int(action)))
             state = state.transition(int(action))
 
-        games.append(game_history)
          
         # Determine winner
         winner = state.get_winner()
-        
-        print("")
-        print(f"PRIMER JUGADOR: {first_participant}")
-        print("")
-        print(f"Segundo JUGADOR: {second_participant}")
-        print("")
-        print("")
-        print(f"GANADOR: {winner}")
-        print(state.board)
         
         if winner == -1:
             if first_participant == a:
@@ -130,7 +118,6 @@ def play(
         player_a_wins=a_wins,
         player_b_wins=b_wins,
         draws=draws,
-        games=games,
     )
 
     # Save to file
@@ -147,7 +134,7 @@ def play(
 def run_tournament(
     players: list[Participant],
     play: Callable[[Participant, Participant], Participant],
-    best_of: int = 15,
+    best_of: int = 20,
     first_player_distribution: float = 0.5,
     shuffle: bool = True,
     seed: int = 911,

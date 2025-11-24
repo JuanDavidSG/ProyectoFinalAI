@@ -80,7 +80,7 @@ class MCTS(Policy):
         else:
             allowed_movements=state.get_free_cols()
 
-
+        random.shuffle(allowed_movements)
         
         root = self.Node(state, None, None)
         root.candidates_actions= allowed_movements.copy()
