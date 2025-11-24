@@ -18,7 +18,7 @@ class MCTS(Policy):
             self.candidates_actions = list(state.get_free_cols())
 
     def __init__(self):
-        self.T = 42
+        self.T = 35
         self.C = 1.4
         self.nodes_explored = []
         MCTS.last_instance = self
@@ -42,7 +42,7 @@ class MCTS(Policy):
         elif progress < 0.7:  
             return self.C  
         else:  
-            return self.C * 0.8
+            return self.C * 0.8 
 
 
     def act(self, s: np.ndarray) -> int:
@@ -178,7 +178,7 @@ class MCTS(Policy):
                         if q > mejor_q:
                             mejor_q = q
 
-                if mejor_q > 0.9:
+                if mejor_q > 0.7:
                     break
 
         self.nodes_explored.append(root.N)
