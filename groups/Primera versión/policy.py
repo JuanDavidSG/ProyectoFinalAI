@@ -27,7 +27,8 @@ class MCTS(Policy):
 
 
     def act(self, s: np.ndarray) -> int:
-        
+        start_time = time.time()  
+        nodes_expanded = 0
         player1_count=0
         player2_count=0
 
@@ -80,7 +81,6 @@ class MCTS(Policy):
         else:
             allowed_movements=state.get_free_cols()
 
-        random.shuffle(allowed_movements)
         
         root = self.Node(state, None, None)
         root.candidates_actions= allowed_movements.copy()
@@ -96,12 +96,18 @@ class MCTS(Policy):
             #Expansión
             if (node.state.get_winner() == 0 and node.candidates_actions != []):
                 node = self.expand(node)
+                nodes_expanded += 1
             
             #Simulación
             R = self.innerTrial(node.state, player)
             
             #Backpropagation
             self.propagation(node, R)
+        elapsed_time = time.time() - start_time
+        self.last_metrics = {
+            "nodes_expanded": nodes_expanded,
+            "time_elapsed": elapsed_time
+        }
         
         return self.takeAction(root)
             

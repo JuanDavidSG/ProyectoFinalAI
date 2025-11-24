@@ -78,8 +78,8 @@ class MCTS(Policy):
         actions_score = []
         for col in free_cols:
             score = 0.0
-            score +=  self.center_score(col)
-            score +=  self.player_strategy(state, col, player)
+            score +=  3*self.center_score(col)
+            score +=  6*self.player_strategy(state, col, player)
             
             # contar mis amenazas
             my_threats = 0
@@ -147,12 +147,12 @@ class MCTS(Policy):
             #Backpropagation
             self.propagation(node, R)
             
-            elapsed_time = time.time() - start_time
+        elapsed_time = time.time() - start_time
             
-            self.last_metrics = {
-                "nodes_expanded": nodes_expanded,
-                "time_elapsed": elapsed_time
-            }
+        self.last_metrics = {
+            "nodes_expanded": nodes_expanded,
+            "time_elapsed": elapsed_time
+        }
         
         return self.takeAction(root)
             

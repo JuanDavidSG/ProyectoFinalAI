@@ -1,8 +1,8 @@
 {
     "player_a": "Tercera versión",
     "player_b": "Primera versión",
-    "player_a_wins": 26,
-    "player_b_wins": 8,
-    "draws": 1,
+    "player_a_wins": 6,
+    "player_b_wins": 5,
+    "draws": 0,
     "games": []
 }
