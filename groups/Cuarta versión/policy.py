@@ -24,7 +24,7 @@ class MCTS(Policy):
         MCTS.last_instance = self
 
     def mount(self, T: int=42, C: float = 1.4):
-        self.T = T
+        self.T = T 
         self.C = C
 
     def dynamiC(self, state):
